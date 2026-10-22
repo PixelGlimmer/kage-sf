@@ -1,6 +1,9 @@
-const SUPABASE_URL = 'https://wpkftawvhikpzqhhuxic.supabase.co';
+// ВСТАВЬ СВОИ КЛЮЧИ СЮДА
+const SUPABASE_URL = 'https://wpkftawvhikpzqhhuxic.supabase.co/';
 const SUPABASE_ANON_KEY = 'sb_publishable_cfIvLkbOaeDUoS2uqLaxgw_JqmA-tWM';
-const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+// Создаем клиент (используем window.supabase, чтобы не было конфликтов)
+const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 // === КОМАНДЫ ===
 const COMMANDS = {
@@ -22,7 +25,7 @@ let currentUser = null;
 
 // === АВТОРИЗАЦИЯ ===
 async function checkSession() {
-  const { data: { session } } = await supabase.auth.getSession();
+  const { data: { session } } = await supabaseClient.auth.getSession();
   if (session) {
     currentUser = session.user;
     showAuditScreen(session.user);
@@ -38,7 +41,7 @@ async function login() {
   const errorEl = document.getElementById('login-error');
   
   const fakeEmail = `${loginInput.toLowerCase().replace(/\s+/g, '_')}@kage.local`;
-  const { data, error } = await supabase.auth.signInWithPassword({ email: fakeEmail, password });
+  const { data, error } = await supabaseClient.auth.signInWithPassword({ email: fakeEmail, password });
   
   if (error) { errorEl.innerText = 'Неверный логин или пароль'; return; }
   
@@ -47,7 +50,7 @@ async function login() {
 }
 
 async function logout() {
-  await supabase.auth.signOut();
+  await supabaseClient.auth.signOut();
   location.reload();
 }
 
@@ -56,7 +59,7 @@ async function showAuditScreen(user) {
   document.getElementById('login-screen').style.display = 'none';
   document.getElementById('audit-screen').style.display = 'block';
 
-  const { data: profile } = await supabase.from('profiles').select('*').eq('id', user.id).single();
+  const { data: profile } = await supabaseClient.from('profiles').select('*').eq('id', user.id).single();
   const displayName = profile?.display_name || user.email.split('@')[0];
   const roleLabel = profile?.role || 'Рекрут';
 
@@ -150,12 +153,10 @@ document.getElementById('audit-form').addEventListener('submit', async (e) => {
   const data = Object.fromEntries(formData.entries());
   data.command = currentCommand;
   
-  // Добавляем данные исполнителя для Discord
-  const profile = await supabase.from('profiles').select('*').eq('id', currentUser.id).single();
+  const profile = await supabaseClient.from('profiles').select('*').eq('id', currentUser.id).single();
   data.executor_name = profile.data?.display_name || 'Админ';
 
-  // 1. Сохраняем в БД
-  const { error: dbError } = await supabase.from('reports').insert([{
+  const { error: dbError } = await supabaseClient.from('reports').insert([{
     author_id: currentUser.id,
     command: currentCommand,
     payload: data,
@@ -167,7 +168,6 @@ document.getElementById('audit-form').addEventListener('submit', async (e) => {
     return;
   }
 
-  // 2. Отправляем на Vercel -> Discord
   try {
     const res = await fetch('/send-report', {
       method: 'POST',
