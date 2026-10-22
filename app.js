@@ -1,8 +1,9 @@
-const SUPABASE_URL = 'https://wpkftawvhikpzqhhuxic.supabase.co/';
+// --- 1. ПОДКЛЮЧЕНИЕ К SUPABASE ---
+const SUPABASE_URL = 'https://wpkftawvhikpzqhhuxic.supabase.co';
 const SUPABASE_ANON_KEY = 'sb_publishable_cfIvLkbOaeDUoS2uqLaxgw_JqmA-tWM';
-
 const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
+// --- 2. СПИСОК КОМАНД ---
 const COMMANDS = {
   hire: { label: '/принятие', title: 'Отчет о приеме участника', reason: 'Причина принятия' },
   promote: { label: '/повышение', title: 'Отчет о повышении участника', reason: 'Причина повышения' },
@@ -19,12 +20,14 @@ const COMMANDS = {
 
 let currentCommand = 'hire';
 let currentUser = null;
+let executorData = { name: 'Неизвестно', role: 'Рекрут', id: 'n/a' }; 
 
+// --- 3. АВТОРИЗАЦИЯ ---
 async function checkSession() {
   const { data: { session } } = await supabaseClient.auth.getSession();
   if (session) {
     currentUser = session.user;
-    showAuditScreen(session.user);
+    await loadProfileAndShow(session.user);
   } else {
     document.getElementById('login-screen').style.display = 'block';
     document.getElementById('audit-screen').style.display = 'none';
@@ -42,7 +45,7 @@ async function login() {
   if (error) { errorEl.innerText = 'Неверный логин или пароль'; return; }
   
   currentUser = data.session.user;
-  showAuditScreen(currentUser);
+  await loadProfileAndShow(currentUser);
 }
 
 async function logout() {
@@ -50,25 +53,33 @@ async function logout() {
   location.reload();
 }
 
-async function showAuditScreen(user) {
+// --- 4. ЗАГРУЗКА ПРОФИЛЯ ---
+async function loadProfileAndShow(user) {
+  const { data: profile, error } = await supabaseClient.from('profiles').select('*').eq('id', user.id).single();
+  
+  if (profile) {
+    executorData.name = profile.display_name || 'Без имени';
+    executorData.role = profile.role || 'Рекрут';
+    executorData.id = profile.discord_id || 'не привязан';
+  } else {
+    executorData.name = user.email.split('@')[0];
+    console.warn('Профиль не найден в базе! Создай его в Supabase.', error);
+  }
+
   document.getElementById('login-screen').style.display = 'none';
   document.getElementById('audit-screen').style.display = 'block';
 
-  const { data: profile } = await supabaseClient.from('profiles').select('*').eq('id', user.id).single();
-  const displayName = profile?.display_name || user.email.split('@')[0];
-  const roleLabel = profile?.role || 'Рекрут';
-  const discordId = profile?.discord_id || 'не привязан';
-
-  document.getElementById('executor-name').innerText = displayName;
-  document.getElementById('executor-id').innerText = `ID: ${discordId}`;
-  document.getElementById('preview-executor').innerText = displayName;
-  document.getElementById('preview-role').innerText = roleLabel;
+  document.getElementById('executor-name').innerText = executorData.name;
+  document.getElementById('executor-id').innerText = `ID: ${executorData.id}`;
+  document.getElementById('preview-executor').innerText = executorData.name;
+  document.getElementById('preview-role').innerText = executorData.role;
 
   renderCommands();
   setCommand('hire');
   setupPreview();
 }
 
+// --- 5. UI ЛОГИКА ---
 function renderCommands() {
   const grid = document.getElementById('command-grid');
   grid.innerHTML = '';
@@ -133,6 +144,7 @@ function setupPreview() {
   sync();
 }
 
+// --- 6. ОТПРАВКА ---
 document.getElementById('login-form').addEventListener('submit', (e) => { e.preventDefault(); login(); });
 
 document.getElementById('audit-form').addEventListener('submit', async (e) => {
@@ -145,11 +157,11 @@ document.getElementById('audit-form').addEventListener('submit', async (e) => {
 
   const formData = new FormData(e.target);
   const data = Object.fromEntries(formData.entries());
-  data.command = currentCommand;
   
-  data.executor_name = document.getElementById('executor-name').innerText;
-  data.executor_role = document.getElementById('preview-role').innerText;
-  data.executor_id = document.getElementById('executor-id').innerText.replace('ID: ', '');
+  data.command = currentCommand;
+  data.executor_name = executorData.name;
+  data.executor_role = executorData.role;
+  data.executor_id = executorData.id;
 
   const { error: dbError } = await supabaseClient.from('reports').insert([{
     author_id: currentUser.id,

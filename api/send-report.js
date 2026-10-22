@@ -23,10 +23,19 @@ export default async function handler(req, res) {
   const meta = COMMANDS[d.command] || COMMANDS.hire;
   const playerMention = (d.discord_id || '').replace(/\D/g, '');
   const playerLine = playerMention ? `<@${playerMention}>` : `\`${d.player || 'N/A'}\``;
+  const executorId = (d.executor_id && d.executor_id !== 'не привязан') ? d.executor_id : 'n/a';
 
   const fields = [
-    { name: '👤 Участник', value: `${playerLine}\n╭ Имя: ${d.full_name || 'N/A'}\n├ Discord ID: ${d.discord_id || 'N/A'}\n╰ Статик ID: ${d.static_id || 'N/A'}`, inline: true },
-    { name: '🛡️ Проводит', value: `\`${d.executor_name || 'Админ'}\`\n╰ Отдел: Кадровый аудит`, inline: true },
+    { 
+      name: '👤 Участник', 
+      value: `${playerLine}\n╭ Имя: ${d.full_name || 'N/A'}\n├ Discord ID: ${d.discord_id || 'N/A'}\n╰ Статик ID: ${d.static_id || 'N/A'}`, 
+      inline: true 
+    },
+    { 
+      name: '🛡️ Проводит', 
+      value: `\`${d.executor_name || 'Админ'}\`\n╭ Discord ID: ${executorId}\n├ Роль: ${d.executor_role || 'Рекрут'}\n╰ Отдел: Кадровый аудит`, 
+      inline: true 
+    },
   ];
 
   if (d.from_rank) fields.push({ name: '📈 Изменение ранга', value: `\`${d.from_rank}\` → \`${d.to_rank}\`` });
