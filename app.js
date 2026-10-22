@@ -169,7 +169,7 @@ document.getElementById('audit-form').addEventListener('submit', async (e) => {
   }
 
   try {
-    const res = await fetch('/send-report', {
+    const res = await fetch('/api/send-report', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(data)
