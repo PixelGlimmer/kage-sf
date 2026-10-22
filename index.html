@@ -1,47 +1,162 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Kage Audit | Панель</title>
-    <link rel="stylesheet" href="style.css">
-    <!-- Подключаем Supabase JS -->
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Kage Audit</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@400;500;700;800&family=Manrope:wght@400;500;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
-<body>
+<body class="admin-body">
 
-    <!-- Форма входа (скрыта, если залогинен) -->
-    <div id="auth-section" class="container">
-        <h2>Вход в систему</h2>
-        <input type="email" id="email" placeholder="Email">
-        <input type="password" id="password" placeholder="Пароль">
-        <button onclick="login()">Войти</button>
-        <p id="auth-error" style="color: red;"></p>
-    </div>
+  <!-- ЭКРАН ВХОДА -->
+  <div id="login-screen" class="admin-shell">
+    <section class="login-card">
+      <p class="section-label">Admin Access</p>
+      <h1>Вход в Kage</h1>
+      <p class="lead-text">Войди, чтобы открыть панель аудита.</p>
+      <form id="login-form" class="login-form">
+        <label><span>Логин</span><input type="text" id="login" required></label>
+        <label><span>Пароль</span><input type="password" id="password" required></label>
+        <button class="button button-primary" type="submit">Войти</button>
+        <p id="login-error" class="form-status is-error"></p>
+      </form>
+    </section>
+  </div>
 
-    <!-- Форма отчета (скрыта, пока не вошел) -->
-    <div id="report-section" class="container" style="display: none;">
-        <div style="display: flex; justify-content: space-between; align-items: center;">
-            <h2>Отчет о работе с ЧС</h2>
-            <div>
-                <span id="user-role" class="badge"></span>
-                <button onclick="logout()" class="btn-small">Выйти</button>
-            </div>
+  <!-- ЭКРАН АУДИТА (скрыт) -->
+  <div id="audit-screen" class="admin-shell admin-shell-wide" style="display: none;">
+    <section class="panel-card audit-panel">
+      <div class="admin-header audit-header">
+        <div class="audit-heading">
+          <p class="section-label">Kage Admin</p>
+          <h1>Кадровый аудит</h1>
+          <p class="lead-text audit-subtitle">Выбери команду, заполни форму и отправь отчет в Discord.</p>
         </div>
-        
-        <form id="report-form">
-            <input type="text" id="participant_name" placeholder="Имя участника (Sava Elmers)" required>
-            <input type="text" id="participant_discord" placeholder="Discord ID участника">
-            <input type="text" id="participant_static" placeholder="Статик ID">
-            
-            <textarea id="reason" placeholder="Причина (Освобождение Надежды Кейдж)" required></textarea>
-            <input type="url" id="proof_url" placeholder="Ссылка на доказательство (URL)">
-            
-            <button type="submit">Отправить в Discord и БД</button>
-        </form>
-        <p id="form-status" style="margin-top: 10px;"></p>
-    </div>
+        <div class="header-actions">
+          <button onclick="logout()" class="button button-secondary">Выйти</button>
+        </div>
+      </div>
 
-    <script src="app.js"></script>
+      <div class="audit-layout">
+        <div class="audit-main-column">
+          <div class="audit-command-panel">
+            <div class="audit-command-head">
+              <div>
+                <p class="audit-eyebrow">Команда</p>
+                <h2>Выбери сценарий аудита</h2>
+              </div>
+              <div class="audit-current-command">
+                <span>Сейчас</span>
+                <strong id="current-command-label">/принятие</strong>
+              </div>
+            </div>
+            <div class="audit-command-grid" id="command-grid">
+              <!-- Кнопки команд генерируются в JS -->
+            </div>
+          </div>
+
+          <form id="audit-form" class="status-form audit-form">
+            <div class="audit-form-head">
+              <div>
+                <p class="audit-eyebrow">Данные</p>
+                <h2 id="form-title">Отчет о приеме участника</h2>
+              </div>
+              <div class="audit-meta-chip" id="form-reason-label">Причина принятия</div>
+            </div>
+
+            <div class="audit-fields-grid">
+              <label class="audit-field">
+                <span>Участник</span>
+                <input type="text" name="player" placeholder="@Aloha | Глеб" required>
+              </label>
+              <label class="audit-field">
+                <span>Имя Фамилия</span>
+                <input type="text" name="full_name" placeholder="Aloha | Глеб" required>
+              </label>
+              <label class="audit-field">
+                <span>Discord ID</span>
+                <input type="text" name="discord_id" placeholder="79843384053111956" required>
+              </label>
+              <label class="audit-field">
+                <span>Статик ID</span>
+                <input type="text" name="static_id" placeholder="1542">
+              </label>
+
+              <div class="audit-field audit-field-info">
+                <span>Исполнитель</span>
+                <div class="audit-executor-card">
+                  <strong id="executor-name">...</strong>
+                  <small id="executor-id">ID: ...</small>
+                </div>
+              </div>
+
+              <!-- Дополнительные поля (появляются в JS) -->
+              <div id="extra-fields" style="display: contents;"></div>
+
+              <label class="audit-field audit-field-full">
+                <span id="reason-label">Причина</span>
+                <textarea name="reason" rows="5" placeholder="Подробно опиши причину..." required></textarea>
+              </label>
+            </div>
+
+            <button class="button button-primary audit-submit" type="submit">
+              <span>Отправить аудит</span>
+              <small>Discord webhook</small>
+            </button>
+          </form>
+          <p id="audit-status" class="form-status"></p>
+        </div>
+
+        <aside class="audit-preview-shell">
+          <div class="audit-preview-head">
+            <div>
+              <p class="audit-eyebrow">Preview</p>
+              <h2>Карточка результата</h2>
+            </div>
+            <span class="audit-preview-badge">Discord Embed</span>
+          </div>
+          <div class="audit-embed-card">
+            <div class="audit-embed-accent"></div>
+            <div class="audit-embed-content">
+              <div class="audit-embed-top">
+                <div>
+                  <p class="audit-embed-app">Kage Family</p>
+                  <h3 id="preview-title">Отчет о приеме участника</h3>
+                  <p class="audit-embed-description"><strong id="preview-command">/принятие</strong> • кадровый отчет</p>
+                </div>
+              </div>
+              <div class="audit-embed-grid">
+                <div class="audit-embed-item">
+                  <span>Участник</span>
+                  <strong id="preview-player">@Не указан</strong>
+                  <small class="audit-profile-meta"><span>Имя</span><b id="preview-full_name">Не указано</b></small>
+                  <small class="audit-profile-meta"><span>Discord ID</span><b id="preview-discord_id">Не указан</b></small>
+                </div>
+                <div class="audit-embed-item">
+                  <span>Проводит</span>
+                  <strong id="preview-executor">...</strong>
+                  <small class="audit-profile-meta"><span>Роль</span><b id="preview-role">...</b></small>
+                </div>
+                <div class="audit-embed-item audit-embed-item-full">
+                  <span id="preview-reason-label">Причина</span>
+                  <strong class="audit-quote-block" id="preview-reason">Причина появится после заполнения.</strong>
+                </div>
+              </div>
+              <div class="audit-embed-footer">
+                <span>Kage Family</span>
+                <strong id="preview-date">...</strong>
+              </div>
+            </div>
+          </div>
+        </aside>
+      </div>
+    </section>
+  </div>
+
+  <script src="app.js"></script>
 </body>
 </html>
