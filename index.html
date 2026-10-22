@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kage Audit | Панель</title>
+    <link rel="stylesheet" href="style.css">
+    <!-- Подключаем Supabase JS -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+
+    <!-- Форма входа (скрыта, если залогинен) -->
+    <div id="auth-section" class="container">
+        <h2>Вход в систему</h2>
+        <input type="email" id="email" placeholder="Email">
+        <input type="password" id="password" placeholder="Пароль">
+        <button onclick="login()">Войти</button>
+        <p id="auth-error" style="color: red;"></p>
+    </div>
+
+    <!-- Форма отчета (скрыта, пока не вошел) -->
+    <div id="report-section" class="container" style="display: none;">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+            <h2>Отчет о работе с ЧС</h2>
+            <div>
+                <span id="user-role" class="badge"></span>
+                <button onclick="logout()" class="btn-small">Выйти</button>
+            </div>
+        </div>
+        
+        <form id="report-form">
+            <input type="text" id="participant_name" placeholder="Имя участника (Sava Elmers)" required>
+            <input type="text" id="participant_discord" placeholder="Discord ID участника">
+            <input type="text" id="participant_static" placeholder="Статик ID">
+            
+            <textarea id="reason" placeholder="Причина (Освобождение Надежды Кейдж)" required></textarea>
+            <input type="url" id="proof_url" placeholder="Ссылка на доказательство (URL)">
+            
+            <button type="submit">Отправить в Discord и БД</button>
+        </form>
+        <p id="form-status" style="margin-top: 10px;"></p>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
