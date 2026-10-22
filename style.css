@@ -118,16 +118,8 @@ input:focus, textarea:focus, select:focus {
 .header-actions { display: flex; flex-wrap: wrap; gap: 10px; }
 
 /* Панель аудита */
-.audit-panel {
-  position: relative;
-  overflow: hidden;
-  padding: 32px;
-}
-
-.audit-header, .audit-layout {
-  position: relative;
-  z-index: 1;
-}
+.audit-panel { position: relative; overflow: hidden; padding: 32px; }
+.audit-header, .audit-layout { position: relative; z-index: 1; }
 
 .audit-subtitle {
   margin: 16px 0 0;
