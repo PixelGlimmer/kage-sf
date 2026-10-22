@@ -12,7 +12,6 @@
 </head>
 <body class="admin-body">
 
-  <!-- ЭКРАН ВХОДА -->
   <div id="login-screen" class="admin-shell">
     <section class="login-card">
       <p class="section-label">Admin Access</p>
@@ -27,7 +26,6 @@
     </section>
   </div>
 
-  <!-- ЭКРАН АУДИТА (скрыт) -->
   <div id="audit-screen" class="admin-shell admin-shell-wide" style="display: none;">
     <section class="panel-card audit-panel">
       <div class="admin-header audit-header">
@@ -54,9 +52,7 @@
                 <strong id="current-command-label">/принятие</strong>
               </div>
             </div>
-            <div class="audit-command-grid" id="command-grid">
-              <!-- Кнопки команд генерируются в JS -->
-            </div>
+            <div class="audit-command-grid" id="command-grid"></div>
           </div>
 
           <form id="audit-form" class="status-form audit-form">
@@ -94,7 +90,6 @@
                 </div>
               </div>
 
-              <!-- Дополнительные поля (появляются в JS) -->
               <div id="extra-fields" style="display: contents;"></div>
 
               <label class="audit-field audit-field-full">

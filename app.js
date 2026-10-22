@@ -1,11 +1,8 @@
-// ВСТАВЬ СВОИ КЛЮЧИ СЮДА
 const SUPABASE_URL = 'https://wpkftawvhikpzqhhuxic.supabase.co/';
 const SUPABASE_ANON_KEY = 'sb_publishable_cfIvLkbOaeDUoS2uqLaxgw_JqmA-tWM';
 
-// Создаем клиент (используем window.supabase, чтобы не было конфликтов)
 const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-// === КОМАНДЫ ===
 const COMMANDS = {
   hire: { label: '/принятие', title: 'Отчет о приеме участника', reason: 'Причина принятия' },
   promote: { label: '/повышение', title: 'Отчет о повышении участника', reason: 'Причина повышения' },
@@ -23,7 +20,6 @@ const COMMANDS = {
 let currentCommand = 'hire';
 let currentUser = null;
 
-// === АВТОРИЗАЦИЯ ===
 async function checkSession() {
   const { data: { session } } = await supabaseClient.auth.getSession();
   if (session) {
@@ -54,7 +50,6 @@ async function logout() {
   location.reload();
 }
 
-// === ОТРИСОВКА ЭКРАНА АУДИТА ===
 async function showAuditScreen(user) {
   document.getElementById('login-screen').style.display = 'none';
   document.getElementById('audit-screen').style.display = 'block';
@@ -62,9 +57,10 @@ async function showAuditScreen(user) {
   const { data: profile } = await supabaseClient.from('profiles').select('*').eq('id', user.id).single();
   const displayName = profile?.display_name || user.email.split('@')[0];
   const roleLabel = profile?.role || 'Рекрут';
+  const discordId = profile?.discord_id || 'не привязан';
 
   document.getElementById('executor-name').innerText = displayName;
-  document.getElementById('executor-id').innerText = `ID: ${profile?.discord_id || 'не привязан'}`;
+  document.getElementById('executor-id').innerText = `ID: ${discordId}`;
   document.getElementById('preview-executor').innerText = displayName;
   document.getElementById('preview-role').innerText = roleLabel;
 
@@ -119,7 +115,6 @@ function setCommand(key) {
   setupPreview();
 }
 
-// === LIVE PREVIEW ===
 function setupPreview() {
   const form = document.getElementById('audit-form');
   const fields = form.querySelectorAll('input, textarea');
@@ -138,7 +133,6 @@ function setupPreview() {
   sync();
 }
 
-// === ОТПРАВКА ФОРМЫ ===
 document.getElementById('login-form').addEventListener('submit', (e) => { e.preventDefault(); login(); });
 
 document.getElementById('audit-form').addEventListener('submit', async (e) => {
@@ -153,8 +147,9 @@ document.getElementById('audit-form').addEventListener('submit', async (e) => {
   const data = Object.fromEntries(formData.entries());
   data.command = currentCommand;
   
-  const profile = await supabaseClient.from('profiles').select('*').eq('id', currentUser.id).single();
-  data.executor_name = profile.data?.display_name || 'Админ';
+  data.executor_name = document.getElementById('executor-name').innerText;
+  data.executor_role = document.getElementById('preview-role').innerText;
+  data.executor_id = document.getElementById('executor-id').innerText.replace('ID: ', '');
 
   const { error: dbError } = await supabaseClient.from('reports').insert([{
     author_id: currentUser.id,
