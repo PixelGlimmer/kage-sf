@@ -1,5 +1,5 @@
-const SUPABASE_URL = 'ТВОЙ_SUPABASE_URL';
-const SUPABASE_ANON_KEY = 'ТВОЙ_SUPABASE_ANON_KEY';
+const SUPABASE_URL = 'https://wpkftawvhikpzqhhuxic.supabase.co';
+const SUPABASE_ANON_KEY = 'sb_publishable_cfIvLkbOaeDUoS2uqLaxgw_JqmA-tWM';
 const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 // === КОМАНДЫ ===
