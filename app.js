@@ -60,12 +60,11 @@ async function logout() {
 async function loadProfileAndShow(user) {
   const { data: profile } = await supabaseClient.from('profiles').select('*').eq('id', user.id).single();
   
-  // 🚨 ПРОВЕРКА НА БАН
   if (profile && profile.is_banned === true) {
-    await supabaseClient.auth.signOut(); // Принудительный выход
+    await supabaseClient.auth.signOut();
     document.getElementById('login-screen').style.display = 'flex';
     document.getElementById('audit-screen').style.display = 'none';
-    document.getElementById('login-error').innerText = '🚫 Ваш аккаунт заблокирован. Обратитесь к руководству.';
+    document.getElementById('login-error').innerText = '🚫 Ваш аккаунт заблокирован.';
     return;
   }
 
