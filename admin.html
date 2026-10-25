@@ -28,30 +28,58 @@
           <span id="admin-role" class="role-badge">...</span>
         </div>
       </div>
-      <nav class="admin-nav">
-        <button class="nav-btn" onclick="window.location.href='index.html'">🎯 К аудиту</button>
+      <nav class="admin-nav" style="overflow-y: auto;">
         <button class="nav-btn active" onclick="switchTab('team', this)">👥 Состав</button>
+        <button class="nav-btn" onclick="switchTab('members', this)">🎮 Участники</button>
         <button class="nav-btn" onclick="switchTab('history', this)">📜 История</button>
+        <button class="nav-btn" onclick="switchTab('warnings', this)">⚠️ Выговоры</button>
+        <button class="nav-btn" onclick="switchTab('vacations', this)">🌴 Отпуска</button>
+        <button class="nav-btn" onclick="switchTab('bans', this)">🚫 Баны</button>
       </nav>
-      <button onclick="logout()" class="button button-secondary" style="margin-top: auto; width: 100%;">Выйти</button>
+      <button onclick="window.location.href='index.html'" class="button button-secondary" style="margin-top: auto; width: 100%;">К аудиту</button>
+      <button onclick="logout()" class="button button-secondary" style="margin-top: 10px; width: 100%;">Выйти</button>
     </aside>
 
     <main class="main-content">
+      <!-- ВКЛАДКА: СОСТАВ -->
       <section id="tab-team" class="tab-content">
-        <header class="top-bar">
-          <h1>Управление составом</h1>
-          <p>Изменение ролей и выдача доступов</p>
+        <header class="top-bar" style="display: flex; justify-content: space-between; align-items: center;">
+          <div>
+            <h1>Управление составом</h1>
+            <p>Изменение ролей и выдача доступов</p>
+          </div>
+          <button class="button button-primary" onclick="openCreateModal()" style="width: auto;">➕ Создать сотрудника</button>
         </header>
         <div class="glass-panel table-panel">
           <table class="admin-table">
             <thead>
-              <tr><th>Имя</th><th>Discord ID</th><th>Роль</th><th>Действие</th></tr>
+              <tr><th>Имя</th><th>Discord ID</th><th>Роль</th><th>Статус</th><th>Действие</th></tr>
             </thead>
             <tbody id="team-list"></tbody>
           </table>
         </div>
       </section>
 
+      <!-- ВКЛАДКА: УЧАСТНИКИ -->
+      <section id="tab-members" class="tab-content" style="display: none;">
+        <header class="top-bar" style="display: flex; justify-content: space-between; align-items: center;">
+          <div>
+            <h1>База участников</h1>
+            <p>Глобальный список игроков семьи</p>
+          </div>
+          <button class="button button-primary" onclick="openMemberModal()" style="width: auto;">➕ Добавить участника</button>
+        </header>
+        <div class="glass-panel table-panel">
+          <table class="admin-table">
+            <thead>
+              <tr><th>Ник</th><th>Статик ID</th><th>РП Имя</th><th>Ранг</th></tr>
+            </thead>
+            <tbody id="members-list"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- ВКЛАДКА: ИСТОРИЯ -->
       <section id="tab-history" class="tab-content" style="display: none;">
         <header class="top-bar">
           <h1>История аудитов</h1>
@@ -66,7 +94,99 @@
           </table>
         </div>
       </section>
+
+      <!-- ВКЛАДКА: ВЫГОВОРЫ -->
+      <section id="tab-warnings" class="tab-content" style="display: none;">
+        <header class="top-bar">
+          <h1>Выговоры</h1>
+          <p>История нарушений и предупреждений</p>
+        </header>
+        <div class="glass-panel table-panel">
+          <table class="admin-table">
+            <thead>
+              <tr><th>Кому</th><th>Причина</th><th>Дата</th><th>Кто выдал</th></tr>
+            </thead>
+            <tbody id="warnings-list"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- ВКЛАДКА: ОТПУСКА -->
+      <section id="tab-vacations" class="tab-content" style="display: none;">
+        <header class="top-bar">
+          <h1>Отпуска</h1>
+          <p>Кто, когда и на сколько уходит</p>
+        </header>
+        <div class="glass-panel table-panel">
+          <table class="admin-table">
+            <thead>
+              <tr><th>Сотрудник</th><th>Начало</th><th>Конец</th><th>Статус</th></tr>
+            </thead>
+            <tbody id="vacations-list"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- ВКЛАДКА: БАНЫ -->
+      <section id="tab-bans" class="tab-content" style="display: none;">
+        <header class="top-bar">
+          <h1>Баны в админке</h1>
+          <p>Люди, которым запрещен вход на сайт</p>
+        </header>
+        <div class="glass-panel table-panel">
+          <table class="admin-table">
+            <thead>
+              <tr><th>Имя</th><th>Discord ID</th><th>Роль</th><th>Действие</th></tr>
+            </thead>
+            <tbody id="bans-list"></tbody>
+          </table>
+        </div>
+      </section>
     </main>
+  </div>
+
+  <!-- МОДАЛЬНОЕ ОКНО: СОЗДАНИЕ СОТРУДНИКА -->
+  <div id="create-modal" class="modal-overlay" style="display: none;">
+    <div class="modal-card glass-panel">
+      <h2>Создать сотрудника</h2>
+      <form id="create-form" class="status-form">
+        <div class="input-row">
+          <label><span>Логин (James)</span><input type="text" name="login" required></label>
+          <label><span>Имя (James Kagez)</span><input type="text" name="display_name" required></label>
+        </div>
+        <div class="input-row">
+          <label><span>Discord ID</span><input type="text" name="discord_id"></label>
+          <label><span>Роль</span>
+            <select name="role">
+              <option value="owner">Владелец</option>
+              <option value="co-owner">Совладелец</option>
+              <option value="deputy">Заместитель</option>
+              <option value="tech">Тех. Админ</option>
+              <option value="recruiter" selected>Рекрут</option>
+            </select>
+          </label>
+        </div>
+        <button type="submit" class="button button-primary">Создать</button>
+        <button type="button" class="button button-secondary" onclick="closeCreateModal()">Отмена</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- МОДАЛЬНОЕ ОКНО: ДОБАВЛЕНИЕ УЧАСТНИКА -->
+  <div id="member-modal" class="modal-overlay" style="display: none;">
+    <div class="modal-card glass-panel">
+      <h2>Добавить участника</h2>
+      <form id="member-form" class="status-form">
+        <label><span>Ник</span><input type="text" name="nickname" required></label>
+        <label><span>Статик ID</span><input type="text" name="static_id" required></label>
+        <div class="input-row">
+          <label><span>РП Имя</span><input type="text" name="rp_name"></label>
+          <label><span>Ранг</span><input type="text" name="rank"></label>
+        </div>
+        <button type="submit" class="button button-primary">Добавить</button>
+        <button type="button" class="button button-secondary" onclick="closeMemberModal()">Отмена</button>
+      </form>
+    </div>
   </div>
 
   <script src="admin.js"></script>

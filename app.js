@@ -26,15 +26,20 @@ function showToast(message, isError = false) {
 
 async function checkSession() {
   const { data: { session } } = await supabaseClient.auth.getSession();
-  if (session) { currentUser = session.user; await loadProfileAndShow(session.user); }
+  if (session) { 
+    currentUser = session.user; 
+    await loadProfileAndShow(session.user); 
+  }
 }
 
 async function login() {
   const loginInput = document.getElementById('login').value.trim();
   const password = document.getElementById('password').value;
   const fakeEmail = `${loginInput.toLowerCase().replace(/\s+/g, '_')}@kage.local`;
+  
   const { data, error } = await supabaseClient.auth.signInWithPassword({ email: fakeEmail, password });
   if (error) { document.getElementById('login-error').innerText = 'Неверный логин или пароль'; return; }
+  
   currentUser = data.session.user;
   await loadProfileAndShow(currentUser);
 }
@@ -54,17 +59,29 @@ async function logout() {
 
 async function loadProfileAndShow(user) {
   const { data: profile } = await supabaseClient.from('profiles').select('*').eq('id', user.id).single();
+  
+  // 🚨 ПРОВЕРКА НА БАН
+  if (profile && profile.is_banned === true) {
+    await supabaseClient.auth.signOut(); // Принудительный выход
+    document.getElementById('login-screen').style.display = 'flex';
+    document.getElementById('audit-screen').style.display = 'none';
+    document.getElementById('login-error').innerText = '🚫 Ваш аккаунт заблокирован. Обратитесь к руководству.';
+    return;
+  }
+
   if (profile) {
     executorData.name = profile.display_name || 'Без имени';
     executorData.role = profile.role || 'recruiter';
     executorData.id = profile.discord_id || 'n/a';
   }
+  
   document.getElementById('login-screen').style.display = 'none';
   document.getElementById('audit-screen').style.display = 'flex';
   document.getElementById('executor-name').innerText = executorData.name;
   document.getElementById('preview-role').innerText = executorData.role;
   document.getElementById('user-avatar').innerText = executorData.name.charAt(0).toUpperCase();
   document.getElementById('preview-executor').innerText = executorData.name;
+  
   renderCommands();
   setCommand('hire');
 }
