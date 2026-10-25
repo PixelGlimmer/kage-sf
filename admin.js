@@ -56,7 +56,6 @@ async function loadTeam() {
   tbody.innerHTML = '';
   
   profiles.forEach(p => {
-    const isVacation = p.vacation_start && p.vacation_end && new Date(p.vacation_end) >= new Date();
     const tr = document.createElement('tr');
     tr.innerHTML = `
       <td><strong>${p.display_name || 'Без имени'}</strong></td>
@@ -70,12 +69,7 @@ async function loadTeam() {
           <option value="recruiter" ${p.role === 'recruiter' ? 'selected' : ''}>Рекрут</option>
         </select>
       </td>
-      <td><span class="status-badge ${isVacation ? 'vacation' : 'active'}">${isVacation ? '🌴 В отпуске' : '🟢 В сети'}</span></td>
-      <td style="display: flex; gap: 8px; flex-wrap: wrap;">
-        <button class="btn-save" onclick="saveRole('${p.id}')">💾 Роль</button>
-        <button class="btn-save" style="background: var(--warning); color: #000;" onclick="openWarningModal('${p.id}')">⚠️ Выговор</button>
-        <button class="btn-save" style="background: var(--success); color: #000;" onclick="openVacationModal('${p.id}')">🌴 Отпуск</button>
-      </td>
+      <td><button class="btn-save" onclick="saveRole('${p.id}')">💾 Сохранить</button></td>
     `;
     tbody.appendChild(tr);
   });
@@ -94,14 +88,22 @@ async function loadMembers() {
   if (error) return;
   const tbody = document.getElementById('members-list');
   tbody.innerHTML = '';
+  
   members.forEach(m => {
-    tbody.innerHTML += `
-      <tr>
-        <td><strong>${m.nickname}</strong></td>
-        <td>${m.static_id}</td>
-        <td>${m.rp_name || '—'}</td>
-        <td><span class="tag">${m.rank || '—'}</span></td>
-      </tr>`;
+    const isVacation = m.vacation_start && m.vacation_end && new Date(m.vacation_end) >= new Date();
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td><strong>${m.nickname}</strong></td>
+      <td>${m.static_id}</td>
+      <td>${m.rp_name || '—'}</td>
+      <td><span class="tag">${m.rank || '—'}</span></td>
+      <td><span class="status-badge ${isVacation ? 'vacation' : 'active'}">${isVacation ? '🌴 В отпуске' : '🟢 В сети'}</span></td>
+      <td style="display: flex; gap: 8px; flex-wrap: wrap;">
+        <button class="btn-save" style="background: var(--warning); color: #000;" onclick="openMemberWarningModal('${m.id}')">⚠️ Выговор</button>
+        <button class="btn-save" style="background: var(--success); color: #000;" onclick="openMemberVacationModal('${m.id}')">🌴 Отпуск</button>
+      </td>
+    `;
+    tbody.appendChild(tr);
   });
 }
 
@@ -137,15 +139,15 @@ async function loadHistory() {
   });
 }
 
-// === ВЫГОВОРЫ ===
+// === ВЫГОВОРЫ УЧАСТНИКАМ ===
 async function loadWarnings() {
-  const { data: warnings } = await supabaseClient.from('warnings').select('*, profiles:user_id(display_name)').order('created_at', { ascending: false });
+  const { data: warnings } = await supabaseClient.from('member_warnings').select('*, members(nickname)').order('created_at', { ascending: false });
   const tbody = document.getElementById('warnings-list');
   tbody.innerHTML = '';
   if(warnings) warnings.forEach(w => {
     tbody.innerHTML += `
       <tr>
-        <td>${w.profiles?.display_name || 'Неизвестно'}</td>
+        <td>${w.members?.nickname || 'Неизвестно'}</td>
         <td>${w.reason}</td>
         <td>${new Date(w.created_at).toLocaleDateString('ru-RU')}</td>
         <td>${w.issued_by || '—'}</td>
@@ -153,33 +155,33 @@ async function loadWarnings() {
   });
 }
 
-function openWarningModal(userId) {
-  document.getElementById('warning-user-id').value = userId;
-  document.getElementById('warning-modal').style.display = 'flex';
+function openMemberWarningModal(memberId) {
+  document.getElementById('member-warning-id').value = memberId;
+  document.getElementById('member-warning-modal').style.display = 'flex';
 }
-function closeWarningModal() { document.getElementById('warning-modal').style.display = 'none'; }
+function closeMemberWarningModal() { document.getElementById('member-warning-modal').style.display = 'none'; }
 
-document.getElementById('warning-form').addEventListener('submit', async (e) => {
+document.getElementById('member-warning-form').addEventListener('submit', async (e) => {
   e.preventDefault();
   const formData = new FormData(e.target);
-  const userId = formData.get('user_id');
+  const memberId = formData.get('member_id');
   const reason = formData.get('reason');
   
-  const { error } = await supabaseClient.from('warnings').insert([{
-    user_id: userId, issued_by: currentUser.display_name, reason: reason
+  const { error } = await supabaseClient.from('member_warnings').insert([{
+    member_id: memberId, issued_by: currentUser.display_name, reason: reason
   }]);
 
   if (error) showToast('Ошибка выдачи', true);
   else {
-    showToast('Выговор выдан!');
-    closeWarningModal();
+    showToast('Выговор выдан участнику!');
+    closeMemberWarningModal();
     loadWarnings();
   }
 });
 
-// === ОТПУСКА ===
+// === ОТПУСКА УЧАСТНИКАМ ===
 async function loadVacations() {
-  const { data: vacations } = await supabaseClient.from('profiles').select('*');
+  const { data: vacations } = await supabaseClient.from('members').select('*');
   const tbody = document.getElementById('vacations-list');
   tbody.innerHTML = '';
   if(vacations) vacations.forEach(p => {
@@ -188,7 +190,7 @@ async function loadVacations() {
     const isActive = p.vacation_start && p.vacation_end && new Date(p.vacation_end) >= new Date();
     tbody.innerHTML += `
       <tr>
-        <td><strong>${p.display_name}</strong></td>
+        <td><strong>${p.nickname}</strong></td>
         <td>${start}</td>
         <td>${end}</td>
         <td>${isActive ? '<span class="status-badge vacation">В отпуске</span>' : '<span class="status-badge active">Работает</span>'}</td>
@@ -196,29 +198,29 @@ async function loadVacations() {
   });
 }
 
-function openVacationModal(userId) {
-  document.getElementById('vacation-user-id').value = userId;
-  document.getElementById('vacation-modal').style.display = 'flex';
+function openMemberVacationModal(memberId) {
+  document.getElementById('member-vacation-id').value = memberId;
+  document.getElementById('member-vacation-modal').style.display = 'flex';
 }
-function closeVacationModal() { document.getElementById('vacation-modal').style.display = 'none'; }
+function closeMemberVacationModal() { document.getElementById('member-vacation-modal').style.display = 'none'; }
 
-document.getElementById('vacation-form').addEventListener('submit', async (e) => {
+document.getElementById('member-vacation-form').addEventListener('submit', async (e) => {
   e.preventDefault();
   const formData = new FormData(e.target);
-  const userId = formData.get('user_id');
+  const memberId = formData.get('member_id');
   const start = formData.get('start_date');
   const end = formData.get('end_date');
 
   const { error } = await supabaseClient
-    .from('profiles')
+    .from('members')
     .update({ vacation_start: start, vacation_end: end })
-    .eq('id', userId);
+    .eq('id', memberId);
 
   if (error) showToast('Ошибка отпуска', true);
   else {
-    showToast('Отпуск оформлен!');
-    closeVacationModal();
-    loadTeam();
+    showToast('Участник отправлен в отпуск!');
+    closeMemberVacationModal();
+    loadMembers();
     loadVacations();
   }
 });
